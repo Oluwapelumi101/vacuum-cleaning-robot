@@ -320,7 +320,10 @@ def it_test():
 
 if __name__ == "__main__":
     # main(WIDTH, 10, WIN)
-    x = RobotVisualization(2, 0.5, 1, 10, 1, 1, sim.StandardRobot, "standard")
+    # Room withoout Furniture
+    # x = RobotVisualization(2, 0.5, 1, 10, 1, 1, sim.StandardRobot, "standard")
+    # Room with Furniture
+    x = RobotVisualization(2, 0.5, 1, 10, 1, 1, sim.StandardRobot, "furnished")
     x.run_sim()
     # RobotVisualization.run_sim(x)
     # it_test()

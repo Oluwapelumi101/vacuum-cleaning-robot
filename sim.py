@@ -7,14 +7,11 @@
 import math
 import random
 
-from numpy import MAY_SHARE_BOUNDS
-import ps3_visualize
+
 import pylab
 # import gui
 
 # For python 2.7:
-from ps3_verify_movement27 import test_robot_movement
-
 
 # === Provided class Position
 class Position(object):
