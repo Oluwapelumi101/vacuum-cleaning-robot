@@ -69,12 +69,20 @@ class Tile:
     def make_occupied(self):
         self.color = RobotVisualization.GREEN
 
+    def set_color(self, dirt_amount):
+        dirt_inverse = 100 - dirt_amount
+        color_value = int((dirt_inverse/100) * 255)
+        # print(color_value)
+        # r, g, b = 0,0,0
+        self.color= (color_value, color_value, color_value)
+
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
 
     def __lt__(self, other):
         return False
 
+# "🚀"
 
 class blitRotateImg(pygame.sprite.Sprite):
     vel = 5
@@ -84,7 +92,6 @@ class blitRotateImg(pygame.sprite.Sprite):
         self.surf = surf
         self.originPos = originPos
         self.image = image
-        # self.angle = angle
 
         # get a rotated image
     def move_left(self):
@@ -125,7 +132,7 @@ class RobotVisualization():
     # Colors
     RED = (255, 0, 0)
     GREEN = (0, 255, 0)
-    BLUE = (0, 255, 0)
+    BLUE = "#191970"
     YELLOW = (255, 255, 0)
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
@@ -138,21 +145,7 @@ class RobotVisualization():
     SIDE_PAD = 500
     TOP_PAD = 150
 
-    
-
-    # Dimentions
-    # WIDTH = 1000
-    # WIN = pygame.display.set_mode((WIDTH, WIDTH))
-    # yield(width, num_robots, robots, my_room, room_type, my_room.get_num_cleaned_tiles())
-    # run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_coverage, num_trials,
-    #                   robot_type, room_type):
-
-
     pygame.display.set_caption("Robot Simulation")
-
-    # viz_generator = sim.run_simulation(2, 0.5, 1, 10, 10, 1, 0.9, 100, sim.StandardRobot, "furnished")
-    # sim = next(viz_generator)
-    # print(sim)
 
     def __init__(self, num_robots, speed, capacity, rows, dirt_amount, min_coverage, robot_type, room_type):
         self.rows = rows
@@ -163,7 +156,7 @@ class RobotVisualization():
         self.capacity = capacity
         self.dirt_amount = dirt_amount
         self.min_coverage = min_coverage
-        self.width = 1000
+        self.width = 600
         self.win = pygame.display.set_mode((self.width, self.width))
         self.angle = 0
         self.created_robots = []
@@ -183,6 +176,7 @@ class RobotVisualization():
     # Drawing the grid
     def draw_grid(self):
         gap = (self.width - 0) // self.rows
+        # print(gap, "gap")
         for i in range(self.rows):
             pygame.draw.line(self.win, self.GREY, (0, i * gap), (self.width - 0, i * gap))
         for j in range(self.rows):
@@ -190,7 +184,6 @@ class RobotVisualization():
 
     def draw(self, grid):
         self.win.fill(self.WHITE)
-
         for row in grid:
             for tile in row:
                 tile.draw(self.win)
@@ -225,9 +218,7 @@ class RobotVisualization():
         while run:
             try:
                 x = next(viz_generator)
-                print(x[0], x[1], x[4], x[5])
             except StopIteration:
-                print("Print call of duty")
                 run = False
 
     def run_sim(self):
@@ -236,15 +227,13 @@ class RobotVisualization():
         
         self.my_room = sim_values[0]
         self.robots = sim_values[1]
-        # print(len(self.robots))
-        print(self.my_room.get_num_tiles())
-        print(self.my_room.get_num_cleaned_tiles())
 
         ROWS = self.rows
         grid = self.make_grid()
 
         run = True
 
+  
         # creating the robots 
         for robot in self.robots:
             robotPos = robot.get_robot_position()
@@ -253,27 +242,28 @@ class RobotVisualization():
 
 
         while run:
+            
             clock.tick(6)
             self.angle += 1  
             self.draw(grid)
-            print(self.my_room.get_num_cleaned_tiles())
+            room_array = self.my_room.get_dirt_levels()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
 
+            tile_num = 0
             for row in grid:
                 for tile in row:
                     # print(tile.get_pos())
                     spot = Position(tile.get_pos()[0], tile.get_pos()[1])
 
-                    # Drity tile
-                    if self.my_room.is_tile_cleaned(tile.get_pos()[0], tile.get_pos()[1]) != True:
-                        tile.make_dirty()
+                    # Color tile
+                    tile.set_color(room_array[tile_num])
 
                     # Clean tile
-                    if self.my_room.is_tile_cleaned(tile.get_pos()[0], tile.get_pos()[1]) == True:
-                        tile.make_clean()
+                    # if self.my_room.is_tile_cleaned(tile.get_pos()[0], tile.get_pos()[1]) == True:
+                    #     tile.make_clean()
 
                     # Furnishing room
                     if self.room_type == "furnished":
@@ -286,45 +276,41 @@ class RobotVisualization():
                         x, y = math.floor(robotPos.get_x()), math.floor(robotPos.get_y())
                         if (x == tile.get_pos()[0]) and (y == tile.get_pos()[1]):
                             tile.make_occupied()
-                            
                             ...
-
-           
-            for animation in self.created_robots :
-                animation.draw(self.angle)
+                    tile_num += 1
+            
+            # for animation in self.created_robots :
+            #     animation.draw(self.angle)
 
             try:
                 sim_values = next(sim_generator)
-                # print(x[0], x[1], x[4], x[5])
             except StopIteration:
-                print("Print call of duty")
-                # run = False
+                # print("Print call of duty")
+                ...
 
+            # displaying clean percent
+            font = pygame.font.SysFont('Times New Roman', 20, True)
+            clean_tiles = str(round(self.my_room.get_num_cleaned_tiles() / self.my_room.get_num_tiles() * 100))
+            image = font.render('Tiles cleaned (%): ' + clean_tiles + "%", 1, self.BLUE )
+            self.win.blit(image, (4, 4))
 
             pygame.display.flip() 
 
 
 def it_test():
-    viz_generator = sim.run_simulation(2, 0.5, 1, 10, 10, 1, 1, 100, sim.StandardRobot, "furnished")
+    viz_generator = sim.run_simulation(2, 0.5, 1, 10, 10, 4, 1, 100, sim.StandardRobot, "furnished")
     run = True
     while run:
         try:
             x = next(viz_generator)
-            print(x)
-            # print(x[0], x[1], x[4], x[5])
         except StopIteration:
-            print("Print call of duty")
             run = False
 
 
 
 if __name__ == "__main__":
-    # main(WIDTH, 10, WIN)
-    # Room withoout Furniture
-    # x = RobotVisualization(2, 0.5, 1, 10, 1, 1, sim.StandardRobot, "standard")
     # Room with Furniture
-    x = RobotVisualization(2, 0.5, 1, 10, 1, 1, sim.StandardRobot, "furnished")
+    x = RobotVisualization(2, 0.5, 1, 10, 4, 1, sim.StandardRobot, "standard")
     x.run_sim()
     # RobotVisualization.run_sim(x)
     # it_test()
-    ...

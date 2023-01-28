@@ -143,7 +143,7 @@ class RectangularRoom(object):
             if self.tiles[i] == 0:
                 clean_tiles += 1
         return clean_tiles
-        
+            
     def is_position_in_room(self, pos):
         """
         Determines if pos is inside the room.
@@ -157,7 +157,7 @@ class RectangularRoom(object):
                 return True
         return False
 
-    def get_dirt_amount(self, m, n):
+    def get_dirt_amount(self, tile):
         """
         Return the amount of dirt on the tile (m, n)
         
@@ -168,9 +168,17 @@ class RectangularRoom(object):
 
         Returns: an integer
         """
-        tile_dirt = self.tiles[(m, n)]
+        tile_dirt = self.tiles[tile]
         return tile_dirt
         
+    def get_dirt_levels(self):
+        all_tiles = []
+        for tile in self.tiles:
+            dirt_amount = round((self.get_dirt_amount(tile) / self.dirt_amount) * 100)
+            all_tiles.append(dirt_amount)
+        # print(all_tiles)
+        return(all_tiles)
+
     def get_num_tiles(self):
         """
         Returns: an integer; the total number of tiles in the room
@@ -222,6 +230,7 @@ class Robot(object):
         # Positioninig the robot in the room
         self.position = self.room.get_random_position()
         self.direction = random.uniform(0.0, 360)
+ 
 
     def get_robot_position(self):
         """
@@ -400,7 +409,7 @@ class StandardRobot(Robot):
     direction; when it would hit a wall or furtniture, it *instead*
     chooses a new direction randomly.
     """
-    def update_position_and_clean(self):
+    def update_position_and_clean(self, others):
         """
         Simulate the raise passage of a single time-step.
 
@@ -409,9 +418,21 @@ class StandardRobot(Robot):
         by its given capacity. 
         """
         current_position = self.get_robot_position()
-
+        other_robots = others
         next_position = current_position.get_new_position(self.get_robot_direction(), self.speed)
-        if self.room.is_position_valid(next_position):
+        xAxis, yAxis = round(next_position.get_x(), 2), round(next_position.get_x(), 2)
+        # print((x,y))
+        # Checking if next positon is in occupied
+        def is_occupied(other_robots):
+            for pos in other_robots:
+                if (xAxis, yAxis) == pos:
+                    print(True, (xAxis, yAxis), pos)
+                    return True
+                else:
+                    return False
+        is_occupied(other_robots)
+
+        if self.room.is_position_valid(next_position): #and not is_occupied(other_robots):
             self.set_robot_position(next_position)
             self.room.clean_tile_at_position(self.get_robot_position(), self.capacity)
             # print(self.room.clean_tile_at_position(self.get_robot_position(), self.capacity))
@@ -514,34 +535,59 @@ def run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_
             robots.append(robo)
         return robots
 
-    # Funstion to Run all robots 
+    # Function to gather the robot positions
+    def get_robot_positions(robots):
+        occupied_posions =  []
+        for robot in robots:
+            x, y = round(robot.get_robot_position().get_x(), 3), round(robot.get_robot_position().get_x(), 3)
+            occupied_posions.append((x,y))
+        return occupied_posions
+
+    # Function to Run all robots 
     def clean_room(robots):
+        count = 0
+        occupied_positions = get_robot_positions(robots)
+        # print(occupied_positions)
         for i in robots:
-            i.update_position_and_clean()
+            occupied_positions = get_robot_positions(robots)
+            # print(occupied_positions[count])
+            # print(count)
+            i.update_position_and_clean(occupied_positions)
+            count += 1
+
 
     # Function to update tile coverage
     def get_coverage(my_room):
+        # print(my_room.get_num_tiles())
         current_coverage = my_room.get_num_cleaned_tiles() / my_room.get_num_tiles()
         return(current_coverage)
 
+
     my_room = create_room(room_type)
     robots = create_robots(my_room)
-    ## running a single simulation
-    # def run_sim(min_coverage, my_room, robots):
-    #     # visual = gui.RobotVisualization(width, num_robots, robots, my_room, room_type)
-    #     # gui.RobotVisualization.run_sim(visual)
     num_runs = 0
+
+
     yield(my_room, robots, width, num_robots, robots, room_type, my_room.get_num_cleaned_tiles())
-    # yield("A")
+
+
     while get_coverage(my_room) < min_coverage:
+        # robotPos = get_robot_positions(robots)
+
+        # if robotPos[0] == robotPos[1]:
+        #     print("collide")
+        #     print(robotPos)
+
+       
         clean_room(robots)
         num_runs += 1
-        # print(num_runs)
-        yield(my_room, robots, width, num_robots, robots, room_type, my_room.get_num_cleaned_tiles())
-        # yield("B")
-            # gui.RobotVisualization.run_sim(visual)
+        # print(num_runs, get_coverage(my_room))
 
-        # return (num_runs)
+
+        yield(my_room, robots, width, num_robots, robots, room_type, my_room.get_num_cleaned_tiles())
+    
+
+    return (num_runs)
 
 
     # yield(run_sim(min_coverage, my_room, robots))
@@ -556,11 +602,32 @@ def run_simulation(num_robots, speed, capacity, width, height, dirt_amount, min_
 # print ('avg time steps: ' + str(run_simulation(3, 0.5, 1, 10, 10, 1, 0.9, 100, StandardRobot)))
 
 def main():
-    print ('avg time steps: ' + str(run_simulation(2, 0.5, 1, 10, 10, 1, 0.9, 100, StandardRobot, "furnished")))
+    print ('avg time steps: ' + str(run_simulation(2, 0.5, 1, 10, 10, 4, 0.9, 100, StandardRobot, "standard")))
     ...
 
 if __name__ == "__main__":
     main()
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # === Problem 6
